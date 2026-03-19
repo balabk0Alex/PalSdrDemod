@@ -1,0 +1,23 @@
+function out = detect_frame(tv_signal, params)
+DEV = true;
+addpath('/utils');
+%normalize 
+if(~DEV)
+    normalize_tv_signal = aaaa;%here normalize
+else 
+    k = ;
+    n = ;
+    
+end
+normalize_tv_signal = tv_signal;
+first_between_frame = find_pulse_v1( duration_pulse, k, n);
+[st_ind, end_ind] = first_between_frame;
+
+frame_size = ;
+start_frame = end_ind;
+end_frame = start_frame + frame_size; 
+
+%specify index 
+out = [start_frame end_frame];
+
+end

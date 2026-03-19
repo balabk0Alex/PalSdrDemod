@@ -1,0 +1,168 @@
+function [indexes , find_pulse_out] = find_pulse_v1( input_signal, find_pulse_params)
+%Requirements for input signal: 
+%1.) He has pulse with duration or pulse do not exist 
+%2.) Pulse can be error which include in value max value
+%3.) Pulse with errors have mini- pulse without errors . 
+%
+%PARAMS:
+%1.)n - error in m
+%
+%
+%
+%
+% All function types "find pulse " have 2 types: 
+%1.) Pulse is input_array have error.
+%2.) Pulse without error.
+%For example : 
+%...011111111110..... - it is array without error.
+%...011111011010..... - it is attay with error.
+
+%dev test 
+% filePath = fullfile('..', 'test/test3_find_pulse.mat');
+% input_signal_tv = load(filePath);
+% input_signal_tv = input_signal_tv.tv_signal;
+% input_signal = input_signal_tv < -0.8;
+
+size_signal = length(input_signal);
+n = 5;%ERROR
+duration_pulse = 1.36e4;
+k = 5;
+
+delta_observe = round(duration_pulse/k);
+num_iterations = (size_signal/delta_observe) - (k - 1); %1 frame = k * duration_pulse if frame not whole why need it 
+
+
+last_val = 1;
+for i = 0:(num_iterations-1)
+    truncated_arr = input_signal(1 + i*delta_observe: delta_observe*(i+1));
+    new_val = all(truncated_arr);
+
+    if(~last_val && new_val)
+        %left value
+        pr_k_s = 1 + i*delta_observe;
+        fl_f = true;
+        %find first symbol 
+        delta_obs_mini = round(delta_observe/10);
+        while(fl_f)
+            while(input_signal(pr_k_s) && pr_k_s > delta_obs_mini + 1)
+                pr_k_s = pr_k_s - 1 ;
+            end
+            
+            if(pr_k_s > delta_obs_mini + 1)
+                res = observe_delta(input_signal(pr_k_s - delta_obs_mini: pr_k_s), n);
+            else
+                break;
+            end
+                
+            if(~res)
+                fl_f = false;
+            else
+                pr_k_s = pr_k_s - 1;
+                fl_f = true;
+            end
+
+        end
+
+
+        %rigth value 
+
+        pr_k_e = pr_k_s + (k-1)*delta_observe;
+        fl_e = true;
+         while(fl_e)
+
+            while(input_signal(pr_k_e) && pr_k_e  < size_signal)
+                pr_k_e = pr_k_e + 1 ;
+            end
+            
+            if( pr_k_e + delta_observe < size_signal)
+                res = observe_delta(input_signal(pr_k_e : pr_k_e + delta_obs_mini),n );
+            else
+                break;
+            end
+                
+            if(~res)
+                fl_e = false;
+            else
+                pr_k_e = pr_k_e + 1;
+                fl_e = true;
+            end
+
+         end
+
+
+         if(pr_k_e - pr_k_s >= delta_observe * (k - 1))
+             break;
+         else
+             pr_k_s = 1;
+             pr_k_e = pr_k_s + duration_pulse;
+             disp('frame do not found ')
+            
+         end
+
+    else
+        last_val = new_val;
+
+
+    end
+
+end
+
+frame = input_signal_tv(pr_k_s:pr_k_e);
+
+
+
+
+
+%DEVELOP NOTES 
+% 
+% last_val = 0;
+% for i = 0:(num_iterations-1)
+%     truncated_arr = bin_signal(1 + i*k: k*(i + 1));
+%     new_val =all(truncated_arr);
+% 
+% 
+    % if(~last_val && new_val)
+    %     pr_k = 1 + i*k;
+    % 
+    %     while(bin_signal(pr_k))
+    %         pr_k = pr_k - 1; 
+    %     end
+    %     pr_k = pr_k + 1;
+    %     pulse = pr_k;
+    %     break;
+    % 
+    % end
+% 
+% 
+% 
+% end
+% %filter detect 101 and fix
+% filter101_on = false;
+% if(filter101_on)
+%     indices = strfind(input_signal , [1 0 1]);
+%     for i = length(indices):-1:1
+%         input_signal(indices(i): indices(i) + 2) = [1, 1, 1];
+%     end
+% end
+% 
+% ver1 = true;
+% 
+% 
+%end filter 
+% 
+% %find pulse 
+% pulse_duration = 13000;
+% error_durartion_percent = 10; 
+% pulse_duration_min = round(pulse_duration*(1 - error_durartion_percent/100));
+% pulse_duration_max = round(pulse_duration*(1 + error_durartion_percent/100));
+% 
+% ones_array = ones(1, pulse_duration_min);
+% indices_frame = strfind(input_signal ,ones_array)
+% 
+% if (length(indices_frame == 0))
+%     disp('FRAME DO NOT FOUND ')
+% end
+% 
+%
+
+%end 
